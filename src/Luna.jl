@@ -7,6 +7,7 @@ using StaticArrays
 export I
 export Intersection
 export Matrix4x4
+export Object
 export Ray
 export Transform
 export Vector4
@@ -57,6 +58,27 @@ struct Transform{T}
     matrix⁻¹::Matrix4x4{T}
 end
 
+"""
+    Object{S,T}
+
+An object is a thing that can be rendered where `S` is
+expected to be a *symbol* tag and `T` is the numeric type
+of the object's transformation. 
+
+# Remarks
+Objects are always defined in unit space and depend on
+their `transform` to move them into world space.
+
+# Examples
+```julia-repl
+julia> t = Matrix4x4{Float64}(I) |> scale(0.5, 0.75, 0.25) |> Transform
+Transform([0.5 0.0 0.0 0.0; 0.0 0.75 0.0 0.0; 0.0 0.0 0.25 0.0; 0.0 0.0 0.0 1.0])
+
+julia> Object{:foo, Float64}(t)
+Object{:foo,Float64}(Transform([0.5 0.0 0.0 0.0; 0.0 0.75 0.0 0.0; 0.0 0.0 0.25 0.0;
+0.0 0.0 0.0 1.0]))
+```
+"""
 struct Object{S,T}
     transform::Transform{T}     
 end
@@ -148,6 +170,8 @@ isvector(u) = iszero(u.w)
     cross(u::Vector4, v::Vector4)
 
 Computes the cross product of two 4-vectors. 
+
+# Remarks
 The `w` component is ignored and the result is returned as
 a new direction vector.
 
@@ -261,42 +285,6 @@ Ray{Float64}(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 0.3))
 """
 Base.:*(m, r::Ray) = Ray(m * origin(r), m * direction(r))
 Base.:*(r::Ray, m) = m * r
-
-_translate(x, y, z) =
-    @SMatrix[ 1 0 0 x ;
-              0 1 0 y ;
-              0 0 1 z ;
-              0 0 0 1 ]
-
-_scale(x, y, z) =
-    @SMatrix[ x 0 0 0 ;
-              0 y 0 0 ;
-              0 0 z 0 ;
-              0 0 0 1 ]
-
-_rotx(r) =
-    @SMatrix[ 1      0       0 0 ;
-              0 cos(r) -sin(r) 0 ;
-              0 sin(r)  cos(r) 0 ;
-              0      0       0 1 ]
-
-_roty(r) =
-    @SMatrix[  cos(r) 0 sin(r) 0 ;
-                    0 1      0 0 ;
-              -sin(r) 0 cos(r) 0 ;
-                    0 0      0 1 ]
-
-_rotz(r) =
-    @SMatrix[ cos(r) -sin(r) 0 0 ;
-              sin(r)  cos(r) 0 0 ;
-                   0       0 1 0 ;
-                   0       0 0 1 ]
-
-_shear(xy, xz, yx, yz, zx, zy) =
-    @SMatrix[  1 xy xz 0 ;
-              yx  1 yz 0 ;
-              zx zy  1 0 ;
-               0  0  0 1 ]
 
 """
     translate(dx, dy, dz)
@@ -490,5 +478,41 @@ cube(t) = Object{:cube,eltype(t)}(t)
 Creates a new intersection.
 """
 Intersection(t, obj::Object{S,T}) where {S,T} = Intersection(convert(T, t), obj)
+
+_translate(x, y, z) =
+    @SMatrix[ 1 0 0 x ;
+              0 1 0 y ;
+              0 0 1 z ;
+              0 0 0 1 ]
+
+_scale(x, y, z) =
+    @SMatrix[ x 0 0 0 ;
+              0 y 0 0 ;
+              0 0 z 0 ;
+              0 0 0 1 ]
+
+_rotx(r) =
+    @SMatrix[ 1      0       0 0 ;
+              0 cos(r) -sin(r) 0 ;
+              0 sin(r)  cos(r) 0 ;
+              0      0       0 1 ]
+
+_roty(r) =
+    @SMatrix[  cos(r) 0 sin(r) 0 ;
+                    0 1      0 0 ;
+              -sin(r) 0 cos(r) 0 ;
+                    0 0      0 1 ]
+
+_rotz(r) =
+    @SMatrix[ cos(r) -sin(r) 0 0 ;
+              sin(r)  cos(r) 0 0 ;
+                   0       0 1 0 ;
+                   0       0 0 1 ]
+
+_shear(xy, xz, yx, yz, zx, zy) =
+    @SMatrix[  1 xy xz 0 ;
+              yx  1 yz 0 ;
+              zx zy  1 0 ;
+               0  0  0 1 ]
 
 end # module
