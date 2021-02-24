@@ -2,3 +2,6 @@ name = "Luna"
 uuid = "d38209ef-e065-4d90-b879-b99a92e4351c"
 authors = ["Bas Pennings <baspster@gmail.com>"]
 version = "0.1.0"
+
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
