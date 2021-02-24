@@ -12,11 +12,13 @@ export Transform
 export Vector4
 export cross
 export cube
+export direction
 export dot
 export ispoint, isvector
 export lerp
 export matrix
 export normalize
+export origin
 export point
 export rotx, roty, rotz
 export scale
@@ -63,6 +65,8 @@ struct Intersection{S,T}
     t::T
     object::Object{S,T}
 end
+
+StaticArrays.similar_type(::Type{V}, ::Type{F}, size::Size{(4,)}) where {V<:Vector4, F<:Real} = Vector4
 
 Base.promote_rule(::Type{Vector4{Int64}}, ::Type{Vector4{Rational{Int64}}}) = Vector4{Rational{Int64}}
 Base.promote_rule(::Type{Vector4{Rational{Int64}}}, ::Type{Vector4{Int64}}) = Vector4{Rational{Int64}} 
@@ -184,6 +188,79 @@ end
 Creates a ray with origin `o` and direction `d`.
 """
 Ray(o, d) = Ray(promote(o, d)...)
+
+"""
+    origin(r)
+
+Returns the origin position vector for ray `r`.
+"""
+origin(r) = r.origin
+
+"""
+    direction(r)
+
+Returns the direction vector for ray `r`.
+"""
+direction(r) = r.direction
+
+"""
+    (r::Ray)(t)
+
+Calculates a position vector at `t` along ray `r`.
+
+# Examples
+```julia-repl
+julia> r(0)
+4-element Vector4{Int64} with indices SOneTo(4):
+ 0
+ 0
+ 0
+ 1
+
+julia> r(1)
+4-element Vector4{Int64} with indices SOneTo(4):
+ 0
+ 0
+ 1
+ 1
+
+julia> r(0.5)
+4-element StaticArrays.SArray{Tuple{4},Float64,1,4} with indices SOneTo(4):
+ 0.0
+ 0.0
+ 0.5
+ 1.0
+```
+"""
+(r::Ray)(t) = origin(r) + t * direction(r)
+
+"""
+    *(m, r::Ray)
+    *(r::Ray, m)
+
+Returns a new ray with `m` applied to origin and direction of `r`.
+
+# Examples
+```
+julia> m = Matrix4x4{Float64}(I) |> scale(0.5, 0.75, 0.3)
+4×4 StaticArrays.SArray{Tuple{4,4},Float64,2,16} with indices SOneTo(4)×SOneTo(4):
+ 0.5  0.0   0.0  0.0
+ 0.0  0.75  0.0  0.0
+ 0.0  0.0   0.3  0.0
+ 0.0  0.0   0.0  1.0
+
+julia> r = Ray(point(0,0,0), vector(0,0,1))
+Ray{Int64}(point(0, 0, 0), vector(0, 0, 1))
+
+julia> r * m
+Ray{Float64}(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 0.3))
+
+julia> m * r
+Ray{Float64}(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 0.3))
+```
+"""
+Base.:*(m, r::Ray) = Ray(m * origin(r), m * direction(r))
+Base.:*(r::Ray, m) = m * r
 
 _translate(x, y, z) =
     @SMatrix[ 1 0 0 x ;
