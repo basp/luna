@@ -1,2 +1,2 @@
 # luna
-Basic ray tracing in Julia
+Basic ray tracing in Julia.
