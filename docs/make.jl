@@ -1,3 +1,3 @@
 using Documenter, Luna
 
-makedocs(sitename="Luna")
+makedocs(sitename = "Luna")

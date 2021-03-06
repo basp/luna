@@ -1,9 +1,7 @@
 module Luna
 
 using Colors
-using Images
 using LinearAlgebra
-using PolynomialRoots
 using StaticArrays
 
 export I
@@ -17,6 +15,7 @@ export cross
 export cube
 export direction
 export dot
+export eye
 export ispoint, isvector
 export lerp
 export matrix
@@ -51,7 +50,7 @@ end
 
 A 4x4 matrix with elements of type `T`.
 """
-const Matrix4x4{T} = SMatrix{4,4,T,16} where T<:Real
+const Matrix4x4{T} = SMatrix{4,4,T,16} where {T<:Real}
 
 struct Ray{T}
     origin::Vector4{T}
@@ -84,9 +83,9 @@ Object{:foo,Float64}(Transform([0.5 0.0 0.0 0.0; 0.0 0.75 0.0 0.0; 0.0 0.0 0.25 
 0.0 0.0 0.0 1.0]))
 ```
 """
-struct Object{S,T}
+mutable struct Object{S,T}
     transform::Transform{T}
-    children::Array{Object{S,T}, 1}     
+    children::Array{Object{S,T},1}
 end
 
 struct Intersection{S,T}
@@ -94,10 +93,16 @@ struct Intersection{S,T}
     object::Object{S,T}
 end
 
-StaticArrays.similar_type(::Type{V}, ::Type{F}, size::Size{(4,)}) where {V<:Vector4, F<:Real} = Vector4
+StaticArrays.similar_type(
+    ::Type{V},
+    ::Type{F},
+    size::Size{(4,)},
+) where {V<:Vector4,F<:Real} = Vector4
 
-Base.promote_rule(::Type{Vector4{Int64}}, ::Type{Vector4{Rational{Int64}}}) = Vector4{Rational{Int64}}
-Base.promote_rule(::Type{Vector4{Rational{Int64}}}, ::Type{Vector4{Int64}}) = Vector4{Rational{Int64}} 
+Base.promote_rule(::Type{Vector4{Int64}}, ::Type{Vector4{Rational{Int64}}}) =
+    Vector4{Rational{Int64}}
+Base.promote_rule(::Type{Vector4{Rational{Int64}}}, ::Type{Vector4{Int64}}) =
+    Vector4{Rational{Int64}}
 Base.promote_rule(::Type{Vector4{Int64}}, ::Type{Vector4{Float64}}) = Vector4{Float64}
 Base.promote_rule(::Type{Vector4{Float64}}, ::Type{Vector4{Int64}}) = Vector4{Float64}
 
@@ -310,6 +315,13 @@ Base.:*(m, r::Ray) = Ray(m * origin(r), m * direction(r))
 Base.:*(r::Ray, m) = m * r
 
 """
+    eye()
+
+Creates a 4x4 identity matrix of of `Float64` values.
+"""
+eye() = Matrix4x4{Float64}(I)
+
+"""
     translate(dx, dy, dz)
 
 Creates a translation operation.
@@ -324,7 +336,7 @@ julia> Matrix4x4{Float64}(I) |> translate(1, -2, 3)
  0.0  0.0  0.0   1.0
 ```
 """
-translate(dx, dy, dz) = m -> m * _translate(dx, dy, dz)
+translate(dx, dy, dz) = m -> _translate(dx, dy, dz) * m
 
 """
     scale(sx, sy, sz)
@@ -341,7 +353,7 @@ julia> Matrix4x4{Float64}(I) |> scale(0.5, 0.5, 0.75)
  0.0  0.0  0.0   1.0
 ```
 """
-scale(sx, sy, sz) = m -> m * _scale(sx, sy, sz)
+scale(sx, sy, sz) = m -> _scale(sx, sy, sz) * m
 
 """
     rotx(rad)
@@ -365,7 +377,7 @@ julia> Matrix4x4{Float64}(I) |> rotx(π)
  0.0  0.0        0.0       1.0
 ```
 """
-rotx(rad) = m -> m * _rotx(rad)
+rotx(rad) = m -> _rotx(rad) * m
 
 """
     roty(rad)
@@ -374,7 +386,7 @@ Creates a rotation operation along the y-axis.
 
 See also [`rotx`](@ref) for examples. 
 """
-roty(rad) = m -> m * _roty(rad)
+roty(rad) = m -> _roty(rad) * m
 
 """
     rotz(rad)
@@ -383,7 +395,7 @@ Creates a rotation operation along the z-axis.
 
 See also [`rotx`](@ref) for examples. 
 """
-rotz(rad) = m -> m * _rotz(rad)
+rotz(rad) = m -> _rotz(rad) * m
 
 """
     shear(xy, xz, yx, yz, zx, zy)
@@ -400,7 +412,7 @@ julia> Matrix4x4{Float64}(I) |> shear(1, 2, 3, -1, -2, -3)
   0.0   0.0   0.0  1.0
 ```
 """
-shear(xy, xz, yx, yz, zx, zy) = m -> m * _shear(xy, xz, yx, yz, zx, zy)
+shear(xy, xz, yx, yz, zx, zy) = m -> _shear(xy, xz, yx, yz, zx, zy) * m
 
 """
     Transform(m)
@@ -472,7 +484,7 @@ matrices with element type `Float64` or `Float32` depending on
 your system architecture. This means that in practice this method 
 will always return `Float64` (or `Float32`).
 """
-Base.eltype(::Transform{T}) where T = T
+Base.eltype(::Transform{T}) where {T} = T
 
 """
     transform(obj)
@@ -512,9 +524,9 @@ Intersection(t, obj::Object{S,T}) where {S,T} = Intersection(convert(T, t), obj)
 """
     intersect(obj::Object{:sphere,T}, ray) where T
 
-Returns the intersections (if any) between a sphere and ray.
+Returns the intersections between a sphere and ray.
 """
-function Base.intersect(obj::Object{:sphere,T}, ray) where T
+function Base.intersect(obj::Object{:sphere,T}, ray) where {T}
     ray *= inv(transform(obj))
     oc = origin(ray) - point(0, 0, 0)
     a = dot(direction(ray), direction(ray))
@@ -546,94 +558,46 @@ function normalat(obj::Object{:sphere}, worldpoint)
     return normalize(vector(worldnormal))
 end
 
-_translate(x, y, z) =
-    @SMatrix[ 1 0 0 x ;
-              0 1 0 y ;
-              0 0 1 z ;
-              0 0 0 1 ]
+_translate(x, y, z) = @SMatrix[
+    1 0 0 x
+    0 1 0 y
+    0 0 1 z
+    0 0 0 1
+]
 
-_scale(x, y, z) =
-    @SMatrix[ x 0 0 0 ;
-              0 y 0 0 ;
-              0 0 z 0 ;
-              0 0 0 1 ]
+_scale(x, y, z) = @SMatrix[
+    x 0 0 0
+    0 y 0 0
+    0 0 z 0
+    0 0 0 1
+]
 
-_rotx(r) =
-    @SMatrix[ 1      0       0 0 ;
-              0 cos(r) -sin(r) 0 ;
-              0 sin(r)  cos(r) 0 ;
-              0      0       0 1 ]
+_rotx(r) = @SMatrix[
+    1 0 0 0
+    0 cos(r) -sin(r) 0
+    0 sin(r) cos(r) 0
+    0 0 0 1
+]
 
-_roty(r) =
-    @SMatrix[  cos(r) 0 sin(r) 0 ;
-                    0 1      0 0 ;
-              -sin(r) 0 cos(r) 0 ;
-                    0 0      0 1 ]
+_roty(r) = @SMatrix[
+    cos(r) 0 sin(r) 0
+    0 1 0 0
+    -sin(r) 0 cos(r) 0
+    0 0 0 1
+]
 
-_rotz(r) =
-    @SMatrix[ cos(r) -sin(r) 0 0 ;
-              sin(r)  cos(r) 0 0 ;
-                   0       0 1 0 ;
-                   0       0 0 1 ]
+_rotz(r) = @SMatrix[
+    cos(r) -sin(r) 0 0
+    sin(r) cos(r) 0 0
+    0 0 1 0
+    0 0 0 1
+]
 
-_shear(xy, xz, yx, yz, zx, zy) =
-    @SMatrix[  1 xy xz 0 ;
-              yx  1 yz 0 ;
-              zx zy  1 0 ;
-               0  0  0 1 ]
-
-function trygethit(xs)
-    filter!(x -> x.t > 0, xs)
-    if isempty(xs)
-        return false, nothing
-    end
-    return true, first(xs).t
-end
-
-function shade(obj::Object{:sphere}, r)
-    xs = intersect(obj, r)
-    ok, t = trygethit(xs)
-    if ok
-        worldpoint = r(t)
-        n = normalat(obj, worldpoint)
-        return 0.5 * RGB(n.x+1, n.y+1, -n.z+1)
-    end
-    uv = normalize(direction(r))
-    t = 0.5 * (uv.y + 1.0)
-    lerp(RGB(1.0, 1, 1), RGB(0.5, 0.7, 1.0), t)
-end
-
-function test()
-    obj = I |> scale(0.5, 0.5, 0.5) |> Transform |> sphere
-    
-    ar = 16.0 / 9.0
-    cols = 1920
-    rows = floor(Int, cols / ar)
-    
-    vpheight = 2.0
-    vpwidth = ar * vpheight
-    focal_lenght = 1.0
-
-    origin = point(0, 0, -1)
-    horizontal = vector(vpwidth, 0, 0)
-    vertical = vector(0, vpheight, 0)
-
-    focal_aspect = vector(0, 0, focal_lenght)
-    lowerleftcorner = origin - horizontal/2 - vertical/2 + focal_aspect
-
-    data = fill(RGB(0,0,0), rows, cols)
-    Threads.@threads for j in reverse(0:rows - 1)
-        for i in 0:cols - 1
-            u = i / (cols - 1)
-            v = j / (rows - 1)
-            direction = lowerleftcorner + u*horizontal + v*vertical - origin
-            ray = Ray(origin, direction)
-            color = shade(obj, ray)
-            data[rows - j, i + 1] = color
-        end
-    end
-
-    save("test.png", data)
-end
+_shear(xy, xz, yx, yz, zx, zy) = @SMatrix[
+    1 xy xz 0
+    yx 1 yz 0
+    zx zy 1 0
+    0 0 0 1
+]
 
 end # module
