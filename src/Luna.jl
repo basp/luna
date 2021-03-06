@@ -1,5 +1,7 @@
 module Luna
 
+using Colors
+using Images
 using LinearAlgebra
 using PolynomialRoots
 using StaticArrays
@@ -18,9 +20,12 @@ export dot
 export ispoint, isvector
 export lerp
 export matrix
+export norm
+export normalat
 export normalize
 export origin
 export point
+export reflect
 export rotx, roty, rotz
 export scale
 export shear
@@ -80,7 +85,8 @@ Object{:foo,Float64}(Transform([0.5 0.0 0.0 0.0; 0.0 0.75 0.0 0.0; 0.0 0.0 0.25 
 ```
 """
 struct Object{S,T}
-    transform::Transform{T}     
+    transform::Transform{T}
+    children::Array{Object{S,T}, 1}     
 end
 
 struct Intersection{S,T}
@@ -104,6 +110,16 @@ function Base.show(io::IO, u::Vector4)
         print(io, u)
     end
 end
+
+"""
+    isless(a::Intersection, b::Intersection)
+
+Return `true` if `a` is closer than `b`.
+
+# Remarks
+Intersections are compared using their `t` value.
+"""
+Base.isless(a::Intersection, b::Intersection) = isless(a.t, b.t)
 
 """
     lerp(a, b, t)
@@ -205,6 +221,13 @@ function LinearAlgebra.cross(u::Vector4, v::Vector4)
     z = u.x * v.y - u.y * v.x
     vector(x, y, z)
 end
+
+"""
+    reflect(u, n)
+
+Reflects vector `u` over vector `n`.
+"""
+reflect(u, n) = u - 2n * dot(u, n)
 
 """
     Ray(o, d)
@@ -463,14 +486,21 @@ transform(obj) = obj.transform
 
 Returns a unit sphere with transformation `t`.
 """
-sphere(t) = Object{:sphere,eltype(t)}(t)
+sphere(t) = Object{:sphere,eltype(t)}(t, [])
 
 """
     cube(t)
 
 Returns a unit cube with transformation `t`.
 """
-cube(t) = Object{:cube,eltype(t)}(t)
+cube(t) = Object{:cube,eltype(t)}(t, [])
+
+"""
+    group(t, children)
+
+Returns a group with transformation `t` and `children`.
+"""
+group(t, children) = Objectr{:group,eltype(t)}(t, children)
 
 """
     Intersection(t, obj::Object{S,T}) where {S,T}
@@ -478,6 +508,43 @@ cube(t) = Object{:cube,eltype(t)}(t)
 Creates a new intersection.
 """
 Intersection(t, obj::Object{S,T}) where {S,T} = Intersection(convert(T, t), obj)
+
+"""
+    intersect(obj::Object{:sphere,T}, ray) where T
+
+Returns the intersections (if any) between a sphere and ray.
+"""
+function Base.intersect(obj::Object{:sphere,T}, ray) where T
+    ray *= inv(transform(obj))
+    oc = origin(ray) - point(0, 0, 0)
+    a = dot(direction(ray), direction(ray))
+    b = 2 * dot(direction(ray), oc)
+    c = dot(oc, oc) - 1
+    d = b * b - 4 * a * c
+    if iszero(d)
+        t = -b / 2a
+        return [Intersection(t, obj)]
+    elseif d > 0
+        sqrtd = √d
+        t1 = (-b - sqrtd) / 2a
+        t2 = (-b + sqrtd) / 2a
+        return [Intersection(t1, obj), Intersection(t2, obj)]
+    end
+    return empty([], Intersection{:sphere,T})
+end
+
+"""
+    normalat(obj::Object{:sphere,T}, worldpoint)
+
+Returns the world normal of `obj` at `worldpoint`.
+"""
+function normalat(obj::Object{:sphere}, worldpoint)
+    minv = inv(transform(obj))
+    objectpoint = minv * worldpoint
+    objectnormal = objectpoint - point(0, 0, 0)
+    worldnormal = transpose(minv) * objectnormal
+    return normalize(vector(worldnormal))
+end
 
 _translate(x, y, z) =
     @SMatrix[ 1 0 0 x ;
@@ -514,5 +581,59 @@ _shear(xy, xz, yx, yz, zx, zy) =
               yx  1 yz 0 ;
               zx zy  1 0 ;
                0  0  0 1 ]
+
+function trygethit(xs)
+    filter!(x -> x.t > 0, xs)
+    if isempty(xs)
+        return false, nothing
+    end
+    return true, first(xs).t
+end
+
+function shade(obj::Object{:sphere}, r)
+    xs = intersect(obj, r)
+    ok, t = trygethit(xs)
+    if ok
+        worldpoint = r(t)
+        n = normalat(obj, worldpoint)
+        return 0.5 * RGB(n.x+1, n.y+1, -n.z+1)
+    end
+    uv = normalize(direction(r))
+    t = 0.5 * (uv.y + 1.0)
+    lerp(RGB(1.0, 1, 1), RGB(0.5, 0.7, 1.0), t)
+end
+
+function test()
+    obj = I |> scale(0.5, 0.5, 0.5) |> Transform |> sphere
+    
+    ar = 16.0 / 9.0
+    cols = 1920
+    rows = floor(Int, cols / ar)
+    
+    vpheight = 2.0
+    vpwidth = ar * vpheight
+    focal_lenght = 1.0
+
+    origin = point(0, 0, -1)
+    horizontal = vector(vpwidth, 0, 0)
+    vertical = vector(0, vpheight, 0)
+
+    focal_aspect = vector(0, 0, focal_lenght)
+    lowerleftcorner = origin - horizontal/2 - vertical/2 + focal_aspect
+
+    data = fill(RGB(0,0,0), rows, cols)
+    Threads.@threads for j in reverse(0:rows - 1)
+        for i in 0:cols - 1
+            u = i / (cols - 1)
+            v = j / (rows - 1)
+            direction = lowerleftcorner + u*horizontal + v*vertical - origin
+            ray = Ray(origin, direction)
+            color = shade(obj, ray)
+            data[rows - j, i + 1] = color
+        end
+    end
+
+    save("test.png", data)
+end
 
 end # module
