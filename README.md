@@ -53,3 +53,22 @@ inv := m.Inv()
 t := luna.NewExplicitTransform(m, inv)
 ```
 
+## shapes
+The `Shape` interface specifies the basic behavior and properties for things thta participate in the rendering process. Currently we only support a `Shape` of type `Sphere`.
+
+## rays
+A ray has a `Origin` and a `Direction` which are both represented by `Vec4` values. The main purpose of rays is to allow us to interpolate along the ray to find intersections with shapes. A ray is constructed by providing the `origin` and `direction` arguments.
+
+```
+// A ray that is sent into the screen
+ray := luna.NewRay(luna.Point(0, 0, -5), luna.Vector(0, 0, 1))
+```
+
+## interactions
+When we intersect a ray with a shape we get a list of **interactions**. These `Interaction` values will tell the ray tracer how to render the pixel (or pixels) at (or around) where the interaction occurred.
+
+```
+s := NewSphere()
+r := NewRay(Point(0, 0, -5), Vector(0, 0, 1))
+xs := s.Intersect(r)
+```
