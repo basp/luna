@@ -357,3 +357,65 @@ func TestHit(t *testing.T) {
 		})
 	}
 }
+
+func TestRayTransformation(t *testing.T) {
+	ray := luna.NewRay(luna.Point(1, 2, 3), luna.Vector(0, 1, 0))
+	var tests = []struct {
+		name string
+		ans  luna.Ray
+		want luna.Ray
+	}{
+		{
+			"translating a ray",
+			ray.Transform(luna.Translate(3, 4, 5)),
+			luna.NewRay(luna.Point(4, 6, 8), luna.Vector(0, 1, 0)),
+		},
+		{
+			"scaling a ray",
+			ray.Transform(luna.Scale(2, 3, 4)),
+			luna.NewRay(luna.Point(2, 6, 12), luna.Vector(0, 3, 0)),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.ans != tt.want {
+				t.Errorf("got %v, want %v", tt.ans, tt.want)
+			}
+		})
+	}
+}
+
+func TestIntersectTransformedSphere(t *testing.T) {
+	var tests = []struct {
+		name      string
+		transform *luna.Transform
+		want      []float64
+	}{
+		{
+			"intersect a scaled sphere with a ray",
+			luna.NewTransform(luna.Scale(2, 2, 2)),
+			[]float64{3, 7},
+		},
+		{
+			"intersect a translated sphere with a ray",
+			luna.NewTransform(luna.Translate(5, 0, 0)),
+			[]float64{},
+		},
+	}
+	s := luna.NewSphere()
+	r := luna.NewRay(luna.Point(0, 0, -5), luna.Vector(0, 0, 1))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s.SetTransform(tt.transform)
+			ans := s.Intersect(r)
+			if len(ans) != len(tt.want) {
+				t.Fatalf("Expected %v intersections", len(tt.want))
+			}
+			for i := range ans {
+				if ans[i].Time != tt.want[i] {
+					t.Errorf("got %v, want %v", ans[i].Time, tt.want[i])
+				}
+			}
+		})
+	}
+}

@@ -8,7 +8,7 @@ type Sphere struct {
 }
 
 func NewSphere() *Sphere {
-	return new(Sphere)
+	return &Sphere{NewDefaultMaterial(), NewTransform(Identity())}
 }
 
 func (s *Sphere) Material() *Material {
@@ -16,6 +16,7 @@ func (s *Sphere) Material() *Material {
 }
 
 func (s *Sphere) Intersect(ray Ray) []Interaction {
+	ray = ray.Transform(s.transform.Inv)
 	sphereToRay := ray.Origin.Sub(Point(0, 0, 0))
 	a := Dot(ray.Direction, ray.Direction)
 	b := 2 * Dot(ray.Direction, sphereToRay)
@@ -38,4 +39,9 @@ func (s *Sphere) Intersect(ray Ray) []Interaction {
 
 func (s *Sphere) NormalAt(p Vec4) Vec4 {
 	return Vec4{0, 0, 0, 0}
+}
+
+func (s *Sphere) SetTransform(t *Transform) *Sphere {
+	s.transform = t
+	return s
 }
