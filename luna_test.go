@@ -46,6 +46,87 @@ func TestIdentity(t *testing.T) {
 	}
 }
 
+func TestCrossProduct(t *testing.T) {
+	var tests = []struct {
+		u    luna.Vec4
+		v    luna.Vec4
+		want luna.Vec4
+	}{
+		{
+			luna.Vector(1, 2, 3),
+			luna.Vector(2, 3, 4),
+			luna.Vector(-1, 2, -1),
+		},
+		{
+			luna.Vector(2, 3, 4),
+			luna.Vector(1, 2, 3),
+			luna.Vector(1, -2, 1),
+		},
+	}
+	for _, tt := range tests {
+		ans := luna.Cross(tt.u, tt.v)
+		if ans != tt.want {
+			t.Errorf("got %v, want %v", ans, tt.want)
+		}
+	}
+}
+
+func TestDotProduct(t *testing.T) {
+	var tests = []struct {
+		u    luna.Vec4
+		v    luna.Vec4
+		want float64
+	}{
+		{
+			luna.Vector(1, 2, 3),
+			luna.Vector(2, 3, 4),
+			20,
+		},
+		{
+			luna.Vector(1, 1, 1),
+			luna.Vector(1, 1, 1),
+			3,
+		},
+		{
+			luna.Vector(0, 0, 1),
+			luna.Vector(1, 1, 1),
+			1,
+		},
+		{
+			luna.Vector(0.5, 0.5, 0.5),
+			luna.Vector(2, 4, 8),
+			7,
+		},
+	}
+	for _, tt := range tests {
+		ans := luna.Dot(tt.u, tt.v)
+		if ans != tt.want {
+			t.Errorf("got %v, want %v", ans, tt.want)
+		}
+	}
+}
+
+func TestHadamardProduct(t *testing.T) {
+	var tests = []struct {
+		c1   luna.Vec3
+		c2   luna.Vec3
+		want luna.Vec3
+	}{
+		{
+			luna.Color(1, 0.2, 0.4),
+			luna.Color(0.9, 1, 0.1),
+			luna.Color(0.9, 0.2, 0.04),
+		},
+	}
+	const threshold = 0.00000001
+	for _, tt := range tests {
+		ans := luna.Hadamard(tt.c1, tt.c2)
+		if !ans.ApproxEqualThreshold(tt.want, threshold) {
+			t.Errorf("got %v, want %v", ans, tt.want)
+		}
+	}
+}
+
 func TestPrimitiveTransformations(t *testing.T) {
 	var tests = []struct {
 		name      string
@@ -144,6 +225,73 @@ func TestPrimitiveTransformations(t *testing.T) {
 			ans := tt.transform.Mul4x1(tt.v)
 			if !ans.ApproxEqualThreshold(tt.want, threshold) {
 				t.Errorf("got %v, want %v", ans, tt.want)
+			}
+		})
+	}
+}
+
+func TestRayInterpolation(t *testing.T) {
+	var tests = []struct {
+		time float64
+		want luna.Vec4
+	}{
+		{0, luna.Point(2, 3, 4)},
+		{1, luna.Point(3, 3, 4)},
+		{-1, luna.Point(1, 3, 4)},
+		{2.5, luna.Point(4.5, 3, 4)},
+	}
+	ray := luna.NewRay(luna.Point(2, 3, 4), luna.Vector(1, 0, 0))
+	for _, tt := range tests {
+		ans := ray.At(tt.time)
+		if !ans.ApproxEqualThreshold(tt.want, 0.000001) {
+			t.Errorf("got %v, want %v", ans, tt.want)
+		}
+	}
+}
+
+func TestRaySphereIntersections(t *testing.T) {
+	var tests = []struct {
+		name string
+		ray  *luna.Ray
+		want []float64
+	}{
+		{
+			"a ray intersects a sphere at two points",
+			luna.NewRay(luna.Point(0, 0, -5), luna.Vector(0, 0, 1)),
+			[]float64{4.0, 6.0},
+		},
+		{
+			"a ray intersects a sphere at a tangent",
+			luna.NewRay(luna.Point(0, 1, -5), luna.Vector(0, 0, 1)),
+			[]float64{5.0, 5.0},
+		},
+		{
+			"a ray misses a sphere",
+			luna.NewRay(luna.Point(0, 2, -5), luna.Vector(0, 0, 1)),
+			[]float64{},
+		},
+		{
+			"a ray originates inside a sphere",
+			luna.NewRay(luna.Point(0, 0, 0), luna.Vector(0, 0, 1)),
+			[]float64{-1.0, 1.0},
+		},
+		{
+			"a sphere is behind a ray",
+			luna.NewRay(luna.Point(0, 0, 5), luna.Vector(0, 0, 1)),
+			[]float64{-6.0, -4.0},
+		},
+	}
+	s := luna.NewSphere()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ans := s.Intersect(tt.ray)
+			if len(ans) != len(tt.want) {
+				t.Errorf("expected %v intersections", len(tt.want))
+			}
+			for i := range ans {
+				if ans[i].Time != tt.want[i] {
+					t.Errorf("got %v, want %v", ans[i], tt.want[i])
+				}
 			}
 		})
 	}
