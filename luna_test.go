@@ -296,3 +296,64 @@ func TestRaySphereIntersections(t *testing.T) {
 		})
 	}
 }
+
+func TestHit(t *testing.T) {
+	p := luna.Point(0, 0, 0)
+	n := luna.Vector(0, 0, 0)
+	var tests = []struct {
+		name string
+		xs   []luna.Interaction
+		ok   bool
+		want float64
+	}{
+		{
+			"all intersections have positive t",
+			[]luna.Interaction{
+				luna.NewInteraction(p, n, 1, nil),
+				luna.NewInteraction(p, n, 2, nil),
+			},
+			true,
+			1,
+		},
+		{
+			"some intersections have negative t",
+			[]luna.Interaction{
+				luna.NewInteraction(p, n, -1, nil),
+				luna.NewInteraction(p, n, 1, nil),
+			},
+			true,
+			1,
+		},
+		{
+			"all intersections have negative t",
+			[]luna.Interaction{
+				luna.NewInteraction(p, n, -2, nil),
+				luna.NewInteraction(p, n, -1, nil),
+			},
+			false,
+			0,
+		},
+		{
+			"hit is always the lowest non-negative intersection",
+			[]luna.Interaction{
+				luna.NewInteraction(p, n, 5, nil),
+				luna.NewInteraction(p, n, 7, nil),
+				luna.NewInteraction(p, n, -3, nil),
+				luna.NewInteraction(p, n, 2, nil),
+			},
+			true,
+			2,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ok, ans := luna.Hit(tt.xs)
+			if ok != tt.ok {
+				t.Error("expected to find a hit")
+			}
+			if ok && ans.Time != tt.want {
+				t.Errorf("got %v, want %v", ans.Time, tt.want)
+			}
+		})
+	}
+}

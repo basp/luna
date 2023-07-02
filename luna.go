@@ -1,6 +1,8 @@
 package luna
 
 import (
+	"sort"
+
 	"github.com/go-gl/mathgl/mgl64"
 )
 
@@ -33,7 +35,7 @@ type Interaction struct {
 	Object Shape
 }
 
-type isects []*Interaction
+type isects []Interaction
 
 func (xs isects) Len() int           { return len(xs) }
 func (xs isects) Swap(i, j int)      { xs[i], xs[j] = xs[j], xs[i] }
@@ -94,6 +96,16 @@ func RotateY(angle float64) Mat4x4 {
 
 func RotateZ(angle float64) Mat4x4 {
 	return mgl64.HomogRotate3DZ(angle)
+}
+
+func Hit(xs isects) (bool, *Interaction) {
+	sort.Sort(xs)
+	for _, x := range xs {
+		if x.Time >= 0 {
+			return true, &x
+		}
+	}
+	return false, nil
 }
 
 func NewInteraction(p, n Vec4, t float64, obj Shape) Interaction {
