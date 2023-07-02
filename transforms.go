@@ -6,6 +6,10 @@ type Transform struct {
 	InvT Mat4x4
 }
 
-func NewTransform(m Mat4x4) *Transform {
+func NewImplicitTransform(m Mat4x4) *Transform {
 	return &Transform{m, m.Inv(), m.Inv().Transpose()}
+}
+
+func NewExplicitTransform(m Mat4x4, inv Mat4x4) *Transform {
+	return &Transform{m, inv, inv.Transpose()}
 }

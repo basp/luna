@@ -8,7 +8,10 @@ type Sphere struct {
 }
 
 func NewSphere() *Sphere {
-	return &Sphere{NewDefaultMaterial(), NewTransform(Identity())}
+	return &Sphere{
+		NewDefaultMaterial(),
+		NewImplicitTransform(Identity()),
+	}
 }
 
 func (s *Sphere) Material() *Material {

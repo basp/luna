@@ -16,3 +16,23 @@ Vectors are `Vec4` values that have their `W` component set to `0`. It is recomm
 Colors are represented by `Vec3` values. They have no *alpha* component and they do not clamp to `[0..1]`. This means that upon rendering the client is responsible for clamping these color values into a valid color range as well as providing a fitting *alpha* value.
 
 ## transformations
+A Luna `Transform` is a cached value consisting of three 4x4 matrices. The transformation matrix itself, the inverse of that transform matrix and the transposed inverse of the transform matrix.
+
+The `NewImplicitTransform` function takes a `Mat4x4` argument and calculates the inverse `inv` and the inverse-transpose `invt` matrices. 
+
+```
+// creating a transform implicitly
+m := luna.RotateY(PiOver4)
+t := luna.NewImplicitTransform(m)
+```
+
+The `NewExplicitTransform` function takes an explicit inverse matrix `inv` and the inverse-transpose `invt` is calculated using the explicit inverse.
+
+```
+// creating a transform explicitly
+m := luna.RotateY(PiOver4)
+// for example purposes, usually uses specialized `Inv` instead
+inv := m.Inv() 
+t := luna.NewExplicitTransform(m, inv)
+```
+

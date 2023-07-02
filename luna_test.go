@@ -393,12 +393,12 @@ func TestIntersectTransformedSphere(t *testing.T) {
 	}{
 		{
 			"intersect a scaled sphere with a ray",
-			luna.NewTransform(luna.Scale(2, 2, 2)),
+			luna.NewImplicitTransform(luna.Scale(2, 2, 2)),
 			[]float64{3, 7},
 		},
 		{
 			"intersect a translated sphere with a ray",
-			luna.NewTransform(luna.Translate(5, 0, 0)),
+			luna.NewImplicitTransform(luna.Translate(5, 0, 0)),
 			[]float64{},
 		},
 	}
@@ -475,13 +475,13 @@ func TestTranslatedSphereNormalCalculation(t *testing.T) {
 	}{
 		{
 			"compute the normal on a translated sphere",
-			luna.NewTransform(luna.Translate(0, 1, 0)),
+			luna.NewImplicitTransform(luna.Translate(0, 1, 0)),
 			luna.Point(0, 1.70711, -0.70711),
 			luna.Vector(0, 0.70711, -0.70711),
 		},
 		{
 			"compute the normal on a transformed sphere",
-			luna.NewTransform(
+			luna.NewImplicitTransform(
 				luna.Scale(1, 0.5, 1).Mul4(luna.RotateZ(math.Pi / 5))),
 			luna.Point(0, Sqrt2Over2, -Sqrt2Over2),
 			luna.Vector(0, 0.97014, -0.24254),
