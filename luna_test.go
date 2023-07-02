@@ -252,7 +252,7 @@ func TestRayInterpolation(t *testing.T) {
 func TestRaySphereIntersections(t *testing.T) {
 	var tests = []struct {
 		name string
-		ray  *luna.Ray
+		ray  luna.Ray
 		want []float64
 	}{
 		{
@@ -290,7 +290,7 @@ func TestRaySphereIntersections(t *testing.T) {
 			}
 			for i := range ans {
 				if ans[i].Time != tt.want[i] {
-					t.Errorf("got %v, want %v", ans[i], tt.want[i])
+					t.Errorf("got %v, want %v", ans[i].Time, tt.want[i])
 				}
 			}
 		})

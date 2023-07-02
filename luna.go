@@ -22,7 +22,7 @@ type Transform struct {
 
 type Shape interface {
 	Material() *Material
-	Intersect(ray *Ray) []*Interaction
+	Intersect(ray Ray) []Interaction
 	NormalAt(point Vec4) Vec4
 }
 

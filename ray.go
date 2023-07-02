@@ -5,8 +5,8 @@ type Ray struct {
 	Direction Vec4
 }
 
-func NewRay(origin, direction Vec4) *Ray {
-	return &Ray{origin, direction}
+func NewRay(origin, direction Vec4) Ray {
+	return Ray{origin, direction}
 }
 
 func (ray Ray) At(time float64) Vec4 {
