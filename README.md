@@ -9,11 +9,28 @@ In the **Luna** domain there are three primitives which are super important: poi
 ### points
 Points are `Vec4` values that have their `W` component set to `1`. It is recommended to always use the `luna.Point` function to create a position value.
 
+```
+p := luna.Point(1, 2, 3)
+// p.W() == 1
+```
+
 ### vectors
 Vectors are `Vec4` values that have their `W` component set to `0`. It is recommended to always use the `luna.Vector` function to create a direction value.
 
+```
+v := luna.Vector(1, 2, 3)
+// v.W() == 0
+```
+
 ### colors
 Colors are represented by `Vec3` values. They have no *alpha* component and they do not clamp to `[0..1]`. This means that upon rendering the client is responsible for clamping these color values into a valid color range as well as providing a fitting *alpha* value.
+
+```
+c := luna.Color(0, 0.5, 1)
+// c.X() == 0
+// c.Y() == 0.5
+// c.Z() == 1
+```
 
 ## transformations
 A Luna `Transform` is a cached value consisting of three 4x4 matrices. The transformation matrix itself, the inverse of that transform matrix and the transposed inverse of the transform matrix.
