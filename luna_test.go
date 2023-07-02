@@ -419,3 +419,49 @@ func TestIntersectTransformedSphere(t *testing.T) {
 		})
 	}
 }
+
+func TestSphereNormalCalculation(t *testing.T) {
+	var tests = []struct {
+		name string
+		p    luna.Vec4
+		want luna.Vec4
+	}{
+		{
+			"the normal on a sphere at a point on the x axis",
+			luna.Point(1, 0, 0),
+			luna.Vector(1, 0, 0),
+		},
+		{
+			"the normal on a sphere at a point on the y axis",
+			luna.Point(0, 1, 0),
+			luna.Vector(0, 1, 0),
+		},
+		{
+			"the normal on a sphere at a point on the z axis",
+			luna.Point(0, 0, 1),
+			luna.Vector(0, 0, 1),
+		},
+		{
+			"the normal on a sphere at a non-axial point",
+			luna.Point(Sqrt3Over3, Sqrt3Over3, Sqrt3Over3),
+			luna.Vector(Sqrt3Over3, Sqrt3Over3, Sqrt3Over3),
+		},
+	}
+	s := luna.NewSphere()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ans := s.NormalAt(tt.p)
+			if !ans.ApproxEqualThreshold(tt.want, 0.0000001) {
+				t.Errorf("got %v, want %v", ans, tt.want)
+			}
+		})
+	}
+}
+
+func TestNormalAtIsNormalized(t *testing.T) {
+	s := luna.NewSphere()
+	n := s.NormalAt(luna.Point(Sqrt3Over3, Sqrt3Over3, Sqrt3Over3))
+	if n != n.Normalize() {
+		t.Error("normal should be normalized")
+	}
+}

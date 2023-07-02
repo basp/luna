@@ -38,10 +38,9 @@ func (s *Sphere) Intersect(ray Ray) []Interaction {
 }
 
 func (s *Sphere) NormalAt(p Vec4) Vec4 {
-	return Vec4{0, 0, 0, 0}
+	return p.Sub(Point(0, 0, 0)).Normalize()
 }
 
-func (s *Sphere) SetTransform(t *Transform) *Sphere {
+func (s *Sphere) SetTransform(t *Transform) {
 	s.transform = t
-	return s
 }

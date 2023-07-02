@@ -26,6 +26,7 @@ type Shape interface {
 	Material() *Material
 	Intersect(ray Ray) []Interaction
 	NormalAt(point Vec4) Vec4
+	SetTransform(t *Transform)
 }
 
 type Interaction struct {
@@ -117,5 +118,8 @@ func NewTransform(m Mat4x4) *Transform {
 }
 
 func NewDefaultMaterial() *Material {
-	return &Material{}
+	return &Material{
+		Vec3{1, 1, 1},
+		0.1,
+	}
 }
