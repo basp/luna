@@ -465,3 +465,67 @@ func TestNormalAtIsNormalized(t *testing.T) {
 		t.Error("normal should be normalized")
 	}
 }
+
+func TestTranslatedSphereNormalCalculation(t *testing.T) {
+	var tests = []struct {
+		name      string
+		transform *luna.Transform
+		p         luna.Vec4
+		want      luna.Vec4
+	}{
+		{
+			"compute the normal on a translated sphere",
+			luna.NewTransform(luna.Translate(0, 1, 0)),
+			luna.Point(0, 1.70711, -0.70711),
+			luna.Vector(0, 0.70711, -0.70711),
+		},
+		{
+			"compute the normal on a transformed sphere",
+			luna.NewTransform(
+				luna.Scale(1, 0.5, 1).Mul4(luna.RotateZ(math.Pi / 5))),
+			luna.Point(0, Sqrt2Over2, -Sqrt2Over2),
+			luna.Vector(0, 0.97014, -0.24254),
+		},
+	}
+	const threshold = 0.00001
+	s := luna.NewSphere()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s.SetTransform(tt.transform)
+			ans := s.NormalAt(tt.p)
+			if !ans.ApproxEqualThreshold(tt.want, threshold) {
+				t.Errorf("got %v, want %v", ans, tt.want)
+			}
+		})
+	}
+}
+
+func TestVectorReflection(t *testing.T) {
+	var tests = []struct {
+		name string
+		v    luna.Vec4
+		n    luna.Vec4
+		want luna.Vec4
+	}{
+		{
+			"reflecting a vector approaching at 45 degrees",
+			luna.Vector(1, -1, 0),
+			luna.Vector(0, 1, 0),
+			luna.Vector(1, 1, 0),
+		},
+		{
+			"reflecting a vector off a slanted surface",
+			luna.Vector(0, -1, 0),
+			luna.Vector(Sqrt2Over2, Sqrt2Over2, 0),
+			luna.Vector(1, 0, 0),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ans := luna.Reflect(tt.v, tt.n)
+			if !ans.ApproxEqualThreshold(tt.want, 0.000001) {
+				t.Errorf("got %v, want %v", ans, tt.want)
+			}
+		})
+	}
+}

@@ -37,8 +37,12 @@ func (s *Sphere) Intersect(ray Ray) []Interaction {
 	}
 }
 
-func (s *Sphere) NormalAt(p Vec4) Vec4 {
-	return p.Sub(Point(0, 0, 0)).Normalize()
+func (s *Sphere) NormalAt(wp Vec4) Vec4 {
+	op := s.transform.Inv.Mul4x1(wp)
+	on := op.Sub(Point(0, 0, 0))
+	wn := s.transform.InvT.Mul4x1(on)
+	wn[3] = 0
+	return wn.Normalize()
 }
 
 func (s *Sphere) SetTransform(t *Transform) {

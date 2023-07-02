@@ -109,6 +109,10 @@ func Hit(xs isects) (bool, *Interaction) {
 	return false, nil
 }
 
+func Reflect(v, n Vec4) Vec4 {
+	return v.Sub(n.Mul(2).Mul(Dot(v, n)))
+}
+
 func NewInteraction(p, n Vec4, t float64, obj Shape) Interaction {
 	return Interaction{p, n, t, obj}
 }
