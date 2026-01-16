@@ -9,7 +9,7 @@
     <Compile Include="Common.fs" />
     <Compile Include="AST.fs" />
     <Compile Include="Types.fs" />
-    <Compile Include="StackEffects.fs" />
+    <Compile Include="Effects.fs" />
     <Compile Include="Interpreter.fs" />
     <Compile Include="Inference.fs" />
     <Compile Include="Program.fs" />

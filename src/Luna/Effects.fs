@@ -1,4 +1,4 @@
-﻿module Luna.StackEffects
+﻿module Luna.Effects
 
 open Luna.Types
 
@@ -8,7 +8,7 @@ type StackEffect =
         Push : Stack
     }       
     
-type EffectEnv = Map<string, StackEffect>
+type Env = Map<string, StackEffect>
 
 let resolve (s: Subst) (eff: StackEffect) : StackEffect =
     {
@@ -40,13 +40,13 @@ let plusEffect =
         Push = [Int]
     }
 
-let effects : EffectEnv =
+let effects : Env =
     Map.empty
     |> Map.add "dup" dupEffect
     |> Map.add "swap" swapEffect
     |> Map.add "+" plusEffect
 
-let applyEffect (stack: Stack) (effect: StackEffect) : Result<Stack, string> =
+let apply (stack: Stack) (effect: StackEffect) : Result<Stack, string> =
     let rec consume pops stack =
         match pops, stack with
         | [], _ -> Ok stack

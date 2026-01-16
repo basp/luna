@@ -3,13 +3,13 @@
 open System.Collections
 open Types
 open AST
-open StackEffects
-    
+open Effects
+
 let typeOfLiteral = function
     | Literal.Int _ -> Type.Int
     | Literal.Bool _ -> Type.Bool
     
-let rec infer (env: EffectEnv) (init: Stack) (term: Term)
+let rec infer (env: Env) (init: Stack) (term: Term)
     : Result<Stack, string> =
         
     let folder (stackRes: Result<Stack, string>) (factor: Factor) =
@@ -26,7 +26,7 @@ let rec infer (env: EffectEnv) (init: Stack) (term: Term)
                 | None ->
                     return! Error $"Unknown symbol: %s{name}"
                 | Some effect ->
-                    return! applyEffect stack effect
+                    return! apply stack effect
         }
         
     List.fold folder (Ok init) term
