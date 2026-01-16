@@ -1,7 +1,9 @@
 ﻿module Luna.Checker
 
+open System.Collections
 open Types
-open AST    
+open AST
+open StackEffects
     
 let typeOfLiteral = function
     | Literal.Int _ -> Type.Int

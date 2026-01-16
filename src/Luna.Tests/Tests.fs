@@ -108,7 +108,7 @@ let ``addition stack effect`` () =
         Factor.Literal (Int 3)
         Factor.Symbol "+"
     ]
-    let effects = Luna.Types.effects
+    let effects = Luna.StackEffects.effects
     let res = Luna.Checker.checkTerm effects [] term
     match res with
     | Ok s -> Assert.Equal<Luna.Types.Stack>([Luna.Types.Int], s)
@@ -121,7 +121,41 @@ let ``detect type error`` () =
         Factor.Literal (Bool true)
         Factor.Symbol "+"
     ]
-    let res = Luna.Checker.checkTerm Luna.Types.effects [] term
+    let res = Luna.Checker.checkTerm Luna.StackEffects.effects [] term
     match res with
     | Ok _ -> Assert.Fail("Expected type error")
     | Error e -> Assert.Contains("Type mismatch", e)
+    
+[<Fact>]
+let ``dup effect contains type variables`` () =
+    let eff = Luna.StackEffects.dupEffect
+    Assert.Equal<Luna.Types.Stack>([ Luna.Types.Var "a" ], eff.Pop)
+    Assert.Equal<Luna.Types.Stack>(
+        [ Luna.Types.Var "a"; Luna.Types.Var "a" ], eff.Push)
+    
+[<Fact>]
+let ``swap effect contains type variables`` () =
+    let eff = Luna.StackEffects.swapEffect
+    Assert.Equal<Luna.Types.Stack>(
+        [ Luna.Types.Var "a"; Luna.Types.Var "b" ], eff.Pop)
+    Assert.Equal<Luna.Types.Stack>(
+        [ Luna.Types.Var "b"; Luna.Types.Var "a" ], eff.Push)
+    
+[<Fact>]
+let ``dup effect uses single type variable`` () =
+    let a = Luna.Types.Var "a"
+    Assert.Equal<Luna.Types.Stack>([ a ], Luna.StackEffects.dupEffect.Pop)
+    Assert.Equal<Luna.Types.Stack>([ a; a ], Luna.StackEffects.dupEffect.Push)
+    
+[<Fact>]
+let ``swap effect uses two distinct type variables`` () =
+    let a = Luna.Types.Var "a"
+    let b = Luna.Types.Var "b"
+    Assert.Equal<Luna.Types.Stack>([ a; b ], Luna.StackEffects.swapEffect.Pop)
+    Assert.Equal<Luna.Types.Stack>([ b; a ], Luna.StackEffects.swapEffect.Push)
+    
+[<Fact>]
+let ``plus effect is monomorphic`` () =
+    let int = Luna.Types.Int
+    Assert.Equal<Luna.Types.Stack>([ int; int ], Luna.StackEffects.plusEffect.Pop)
+    Assert.Equal<Luna.Types.Stack>([ int ], Luna.StackEffects.plusEffect.Push)
