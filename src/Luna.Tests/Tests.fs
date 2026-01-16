@@ -2,6 +2,7 @@
 
 open Luna.AST
 open Luna.Interpreter
+open Luna.Effects
 open Xunit
 
 let run term =
@@ -121,21 +122,21 @@ let ``detect type error`` () =
         Factor.Literal (Bool true)
         Factor.Symbol "+"
     ]
-    let res = Luna.Inference.infer Luna.Effects.effects [] term
+    let res = Luna.Inference.infer effects [] term
     match res with
     | Ok _ -> Assert.Fail("Expected type error")
     | Error e -> Assert.Contains("Type mismatch", e)
     
 [<Fact>]
 let ``dup effect contains type variables`` () =
-    let eff = Luna.Effects.dupEffect
+    let eff = dupEffect
     Assert.Equal<Luna.Types.Stack>([ Luna.Types.Var "a" ], eff.Pop)
     Assert.Equal<Luna.Types.Stack>(
         [ Luna.Types.Var "a"; Luna.Types.Var "a" ], eff.Push)
     
 [<Fact>]
 let ``swap effect contains type variables`` () =
-    let eff = Luna.Effects.swapEffect
+    let eff = swapEffect
     Assert.Equal<Luna.Types.Stack>(
         [ Luna.Types.Var "a"; Luna.Types.Var "b" ], eff.Pop)
     Assert.Equal<Luna.Types.Stack>(
@@ -144,21 +145,21 @@ let ``swap effect contains type variables`` () =
 [<Fact>]
 let ``dup effect uses single type variable`` () =
     let a = Luna.Types.Var "a"
-    Assert.Equal<Luna.Types.Stack>([ a ], Luna.Effects.dupEffect.Pop)
-    Assert.Equal<Luna.Types.Stack>([ a; a ], Luna.Effects.dupEffect.Push)
+    Assert.Equal<Luna.Types.Stack>([ a ], dupEffect.Pop)
+    Assert.Equal<Luna.Types.Stack>([ a; a ], dupEffect.Push)
     
 [<Fact>]
 let ``swap effect uses two distinct type variables`` () =
     let a = Luna.Types.Var "a"
     let b = Luna.Types.Var "b"
-    Assert.Equal<Luna.Types.Stack>([ a; b ], Luna.Effects.swapEffect.Pop)
-    Assert.Equal<Luna.Types.Stack>([ b; a ], Luna.Effects.swapEffect.Push)
+    Assert.Equal<Luna.Types.Stack>([ a; b ], swapEffect.Pop)
+    Assert.Equal<Luna.Types.Stack>([ b; a ], swapEffect.Push)
     
 [<Fact>]
 let ``plus effect is monomorphic`` () =
     let int = Luna.Types.Int
-    Assert.Equal<Luna.Types.Stack>([ int; int ], Luna.Effects.plusEffect.Pop)
-    Assert.Equal<Luna.Types.Stack>([ int ], Luna.Effects.plusEffect.Push)
+    Assert.Equal<Luna.Types.Stack>([ int; int ], plusEffect.Pop)
+    Assert.Equal<Luna.Types.Stack>([ int ], plusEffect.Push)
 
 [<Fact>]
 let ``resolve replaces single type variable`` () =
@@ -182,5 +183,17 @@ let ``resolve leaves concrete types unchanged`` () =
     Assert.Equal(Luna.Types.Quote, Luna.Types.resolve s Luna.Types.Quote)
     
 [<Fact>]
-let ``resolve effect substitudes inside stack effects`` () =
-    ()
+let ``resolve effect substitutes inside stack effects`` () =
+    let s : Luna.Types.Subst = Map.ofList [
+        "a", Luna.Types.Int
+        "b", Luna.Types.Bool        
+    ]
+    let eff =
+        {
+            Pop = [ Luna.Types.Var "a"; Luna.Types.Var "b" ]
+            Push = [ Luna.Types.Var "a"; Luna.Types.Var "b" ]
+        }
+    let eff' = resolve s eff
+    Assert.Equal<Luna.Types.Stack>([ Luna.Types.Int; Luna.Types.Bool ], eff'.Pop)
+    Assert.Equal<Luna.Types.Stack>([ Luna.Types.Int; Luna.Types.Bool ], eff'.Push)
+    

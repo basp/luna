@@ -9,12 +9,6 @@ type StackEffect =
     }       
     
 type Env = Map<string, StackEffect>
-
-let resolve (s: Subst) (eff: StackEffect) : StackEffect =
-    {
-        Pop = eff.Pop |> List.map (resolve s)
-        Push = eff.Push |> List.map (resolve s)
-    }
     
 let dupEffect =
     {
@@ -45,6 +39,12 @@ let effects : Env =
     |> Map.add "dup" dupEffect
     |> Map.add "swap" swapEffect
     |> Map.add "+" plusEffect
+
+let resolve (s: Subst) (eff: StackEffect) : StackEffect =
+    {
+        Pop = eff.Push |> List.map (resolve s)
+        Push = eff.Push |> List.map (resolve s)
+    }
 
 let apply (stack: Stack) (effect: StackEffect) : Result<Stack, string> =
     let rec consume pops stack =

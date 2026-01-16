@@ -1,6 +1,5 @@
 ﻿module Luna.Inference
 
-open System.Collections
 open Types
 open AST
 open Effects
