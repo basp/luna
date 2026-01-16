@@ -22,3 +22,14 @@ let rec resolve (s: Subst) (t: Type) : Type =
 
 let resolveStack s stack =
     List.map (resolve s) stack
+
+let unify (s: Subst) (t1: Type) (t2: Type) : Result<Subst, string> =
+    let t1 = resolve s t1
+    let t2 = resolve s t2
+    match t1, t2 with
+    | Int, Int -> Ok s
+    | Bool, Bool -> Ok s
+    | Var a, t -> Ok (s.Add(a, t))
+    | t, Var a -> Ok (s.Add(a, t))
+    | Quote, Quote -> Ok s // placeholder for now
+    | _ -> Error $"cannot unify %A{t1} with %A{t2}"

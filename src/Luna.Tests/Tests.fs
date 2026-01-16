@@ -197,3 +197,42 @@ let ``resolve effect substitutes inside stack effects`` () =
     Assert.Equal<Luna.Types.Stack>([ Luna.Types.Int; Luna.Types.Bool ], eff'.Pop)
     Assert.Equal<Luna.Types.Stack>([ Luna.Types.Int; Luna.Types.Bool ], eff'.Push)
     
+[<Fact>]
+let ``unify int with int`` () =
+    let res = Luna.Types.unify Map.empty Luna.Types.Int Luna.Types.Int
+    match res with
+    | Ok s -> Assert.Empty s
+    | Error e -> Assert.Fail e
+    
+[<Fact>]
+let ``unify bool with bool`` () =
+    let res = Luna.Types.unify Map.empty Luna.Types.Bool Luna.Types.Bool
+    match res with
+    | Ok s -> Assert.Empty s
+    | Error e -> Assert.Fail e
+
+[<Fact>]
+let ``unify var with int`` () =
+    let res = Luna.Types.unify Map.empty (Luna.Types.Var "a") Luna.Types.Int
+    match res with
+    | Ok s ->
+        let t' = Luna.Types.resolve s (Luna.Types.Var "a")
+        Assert.Equal(Luna.Types.Int, t')
+    | Error e -> Assert.Fail e
+    
+[<Fact>]
+let ``linking unified vars`` () =
+    let res = Luna.Types.unify Map.empty (Luna.Types.Var "a") (Luna.Types.Var "b")
+    match res with
+    | Ok s ->
+        let a' = Luna.Types.resolve s (Luna.Types.Var "a")
+        let b' = Luna.Types.resolve s (Luna.Types.Var "b")
+        Assert.Equal(a', b')
+    | Error e -> Assert.Fail e 
+
+[<Fact>]
+let ``unify int with bool fails`` () =
+    let res = Luna.Types.unify Map.empty Luna.Types.Int Luna.Types.Bool
+    match res with
+    | Ok _ -> Assert.Fail "Expected unification failure"
+    | Error e -> Assert.Contains("cannot unify", e)
