@@ -159,3 +159,10 @@ let ``plus effect is monomorphic`` () =
     let int = Luna.Types.Int
     Assert.Equal<Luna.Types.Stack>([ int; int ], Luna.StackEffects.plusEffect.Pop)
     Assert.Equal<Luna.Types.Stack>([ int ], Luna.StackEffects.plusEffect.Push)
+
+[<Fact>]
+let ``applySubst replaces single type variable`` () =
+    let s : Luna.Types.Subst = Map.ofList [ ("a", Luna.Types.Int) ]
+    Assert.Equal(Luna.Types.Int, Luna.Types.resolve s (Luna.Types.Int))
+    Assert.Equal(Luna.Types.Bool, Luna.Types.resolve s (Luna.Types.Bool))
+    Assert.Equal(Luna.Types.Quote, Luna.Types.resolve s (Luna.Types.Quote))

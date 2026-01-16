@@ -10,13 +10,15 @@ type Stack = Type list
 
 type Subst = Map<string, Type>
 
-let rec applySubst (s: Subst) (t: Type) : Type =
+let rec resolve (s: Subst) (t: Type) : Type =
     match t with
     | Var a ->
         match s.TryFind a with
-        | Some t' -> applySubst s t'
+        | Some t' -> resolve s t'
         | None -> t
     | Int -> t
     | Bool -> t
     | Quote -> t
 
+let resolveStack s stack =
+    List.map (resolve s) stack

@@ -10,10 +10,10 @@ type StackEffect =
     
 type EffectEnv = Map<string, StackEffect>
 
-let applySubst (s: Subst) (eff: StackEffect) : StackEffect =
+let resolve (s: Subst) (eff: StackEffect) : StackEffect =
     {
-        Pop = eff.Pop |> List.map (applySubst s)
-        Push = eff.Push |> List.map (applySubst s)
+        Pop = eff.Pop |> List.map (resolve s)
+        Push = eff.Push |> List.map (resolve s)
     }
     
 let dupEffect =
