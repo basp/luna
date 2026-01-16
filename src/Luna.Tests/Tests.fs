@@ -190,12 +190,24 @@ let ``resolve effect substitutes inside stack effects`` () =
     ]
     let eff =
         {
-            Pop = [ Luna.Types.Var "a"; Luna.Types.Var "b" ]
-            Push = [ Luna.Types.Var "a"; Luna.Types.Var "b" ]
+            Pop = [ Luna.Types.Var "a" ]
+            Push = [ Luna.Types.Var "b" ]
         }
     let eff' = resolve s eff
-    Assert.Equal<Luna.Types.Stack>([ Luna.Types.Int; Luna.Types.Bool ], eff'.Pop)
-    Assert.Equal<Luna.Types.Stack>([ Luna.Types.Int; Luna.Types.Bool ], eff'.Push)
+    Assert.Equal<Luna.Types.Stack>([ Luna.Types.Int ], eff'.Pop)
+    Assert.Equal<Luna.Types.Stack>([ Luna.Types.Bool ], eff'.Push)
+    
+[<Fact>]
+let ``resolve effect preserves distinct pop and push stacks`` () =
+    let s : Luna.Types.Subst = Map.ofList [ "a", Luna.Types.Int ]
+    let eff =
+        {
+            Pop = [ Luna.Types.Var "a" ]
+            Push = [ Luna.Types.Int; Luna.Types.Int ]
+        }
+    let eff' = resolve s eff    
+    Assert.Single(eff'.Pop) |> ignore
+    Assert.Equal(2, eff'.Push.Length)
     
 [<Fact>]
 let ``unify int with int`` () =

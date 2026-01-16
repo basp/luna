@@ -42,7 +42,7 @@ let effects : Env =
 
 let resolve (s: Subst) (eff: StackEffect) : StackEffect =
     {
-        Pop = eff.Push |> List.map (resolve s)
+        Pop = eff.Pop |> List.map (resolve s)
         Push = eff.Push |> List.map (resolve s)
     }
 
