@@ -10,11 +10,11 @@ type Stack = Type list
 
 type Subst = Map<string, Type>
 
-let rec applySubstType (s: Subst) (t: Type) : Type =
+let rec applySubst (s: Subst) (t: Type) : Type =
     match t with
     | Var a ->
         match s.TryFind a with
-        | Some t' -> applySubstType s t'
+        | Some t' -> applySubst s t'
         | None -> t
     | Int -> t
     | Bool -> t

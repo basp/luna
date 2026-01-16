@@ -1,4 +1,4 @@
-﻿module Luna.Checker
+﻿module Luna.Inference
 
 open System.Collections
 open Types
@@ -9,7 +9,7 @@ let typeOfLiteral = function
     | Literal.Int _ -> Type.Int
     | Literal.Bool _ -> Type.Bool
     
-let rec checkTerm (env: EffectEnv) (init: Stack) (term: Term)
+let rec infer (env: EffectEnv) (init: Stack) (term: Term)
     : Result<Stack, string> =
         
     let folder (stackRes: Result<Stack, string>) (factor: Factor) =

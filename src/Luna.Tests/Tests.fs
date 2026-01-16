@@ -109,7 +109,7 @@ let ``addition stack effect`` () =
         Factor.Symbol "+"
     ]
     let effects = Luna.StackEffects.effects
-    let res = Luna.Checker.checkTerm effects [] term
+    let res = Luna.Inference.infer effects [] term
     match res with
     | Ok s -> Assert.Equal<Luna.Types.Stack>([Luna.Types.Int], s)
     | Error e -> Assert.Fail(e)
@@ -121,7 +121,7 @@ let ``detect type error`` () =
         Factor.Literal (Bool true)
         Factor.Symbol "+"
     ]
-    let res = Luna.Checker.checkTerm Luna.StackEffects.effects [] term
+    let res = Luna.Inference.infer Luna.StackEffects.effects [] term
     match res with
     | Ok _ -> Assert.Fail("Expected type error")
     | Error e -> Assert.Contains("Type mismatch", e)

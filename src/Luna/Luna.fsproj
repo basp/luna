@@ -11,7 +11,7 @@
     <Compile Include="Types.fs" />
     <Compile Include="StackEffects.fs" />
     <Compile Include="Interpreter.fs" />
-    <Compile Include="Checker.fs" />
+    <Compile Include="Inference.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

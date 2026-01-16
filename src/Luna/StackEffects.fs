@@ -10,28 +10,16 @@ type StackEffect =
     
 type EffectEnv = Map<string, StackEffect>
 
-let plusEffect =
+let applySubst (s: Subst) (eff: StackEffect) : StackEffect =
     {
-        Pop = [Int; Int]
-        Push = [Int]
-    }
-    
-let dupIntEffect =
-    {
-        Pop = [Int ]
-        Push = [Int; Int]
+        Pop = eff.Pop |> List.map (applySubst s)
+        Push = eff.Push |> List.map (applySubst s)
     }
     
 let dupEffect =
     {
         Pop = [Var "a"]
         Push = [Var "a"; Var "a"]
-    }
-
-let swapIntEffect =
-    {
-        Pop = [Int; Int]
-        Push = [Int; Int]
     }
     
 let swapEffect =
@@ -46,12 +34,17 @@ let iEffect =
         Push = []
     }
 
+let plusEffect =
+    {
+        Pop = [Int; Int]
+        Push = [Int]
+    }
+
 let effects : EffectEnv =
     Map.empty
+    |> Map.add "dup" dupEffect
+    |> Map.add "swap" swapEffect
     |> Map.add "+" plusEffect
-    |> Map.add "dup" dupIntEffect
-    |> Map.add "swap" swapIntEffect
-    |> Map.add "i" iEffect
 
 let applyEffect (stack: Stack) (effect: StackEffect) : Result<Stack, string> =
     let rec consume pops stack =
